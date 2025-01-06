@@ -116,37 +116,58 @@ class ToxVpnService : VpnService() {
         try {
             val statusMessage = tox.getStatusMessage()
             Log.d(TAG, "Status message: $statusMessage")
-            val regex = """\{\"ownip\":\"(?<ip>.+?)\"\}""".toRegex()
-            val ownip = regex.matchEntire(statusMessage)!!.groups["ip"]!!.value
 
-            val ownInetAddress = InetAddress.getByName(ownip)
-            val netAddress = computeNetworkAddress(ownInetAddress, InetAddress.getByName("255.255.255.0"))!!
-            val builder = Builder()
-            builder.setSession("tox")
-                .addAddress(ownip, 32)
-                .setMtu(mtu)
-                .also { if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) it.setMetered(false) }
+            val regex = """\{\"ownip\":\"(.+?)\"\}""".toRegex()
+            val matchResult = regex.matchEntire(statusMessage)
+            if (matchResult != null) {
+                if (matchResult.groups.size > 1) {
+                    val gr = matchResult.groups[1]
+                    if (gr != null) {
+                        val ownip = gr.value
 
-//                    builder.addRoute(netAddress, 24)
-            val routes = mutableMapOf<InetAddress, Contact>()
+                        val ownInetAddress = InetAddress.getByName(ownip)
+                        val netAddress = computeNetworkAddress(ownInetAddress, InetAddress.getByName("255.255.255.0"))!!
+                        val builder = Builder()
+                        builder.setSession("tox")
+                            .addAddress(ownip, 32)
+                            .setMtu(mtu)
+                            .also { if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) it.setMetered(false) }
 
-            runBlocking {
+                        //                    builder.addRoute(netAddress, 24)
+                        val routes = mutableMapOf<InetAddress, Contact>()
 
-                contactManager.getAll()
-                    .firstOrNull { it.size > 0 }?.map { contact ->
-                            val matches = regex.matchEntire(contact.statusMessage)
-                            if (matches != null) {
-                                val ip = matches?.groups?.get("ip")?.value
-                                if (ip != null) {
-                                    Log.d(TAG, "Contact ip: $ip")
-                                    builder.addRoute(ip, 32)
-                                    routes[InetAddress.getByName(ip)] = contact
+                        runBlocking {
+
+                            contactManager.getAll()
+                                .firstOrNull { it.size > 0 }?.map { contact ->
+                                    val matches = regex.matchEntire(contact.statusMessage)
+                                    if (matches != null) {
+                                        if (matches.groups.size > 1) {
+                                            val gr = matches.groups[1]
+                                            if (gr != null) {
+                                                val ip = gr.value
+                                                Log.d(TAG, "Contact ip: $ip")
+                                                builder.addRoute(ip, 32)
+                                                routes[InetAddress.getByName(ip)] = contact
+                                            }
+                                        }
+                                    }
                                 }
-                            }
                         }
+                        val iface = builder.establish()!!
+                        startToxVpnRunnable(
+                            ToxVpnRunnable(
+                                eventListenerCallbacks,
+                                tox,
+                                this,
+                                iface,
+                                contactManager,
+                                routes
+                            )
+                        )
+                    }
+                }
             }
-            val iface = builder.establish()!!
-            startToxVpnRunnable(ToxVpnRunnable(eventListenerCallbacks, tox, this, iface, contactManager, routes))
         } catch (e: NullPointerException) {
             Log.e(TAG, "Wrong status for ToxVpn", e)
         }
