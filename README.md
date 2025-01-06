@@ -8,7 +8,7 @@
 [<img src="img/get-it-on-fdroid.png" alt="Get aTox on F-Droid" height="80">][fdroid]
 [<img src="img/get-it-on-google-play.png" alt="Get aTox on Google Play" height="80">][gplay]
 
-The reasonable Tox client for Android.
+The reasonable Tox client for Android with toxvpn compatible with https://github.com/cleverca22/toxvpn.
 
 <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1.jpg" alt="chat screen" height="600"> <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2.png" alt="contact screen" height="600">
 
