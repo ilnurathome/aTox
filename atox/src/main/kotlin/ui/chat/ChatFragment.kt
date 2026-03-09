@@ -56,6 +56,7 @@ import ltd.evilcorp.domain.feature.CallState
 import ltd.evilcorp.domain.tox.PublicKey
 
 const val CONTACT_PUBLIC_KEY = "publicKey"
+const val CHAT_FILES_SHARE = "filesShare"
 const val FOCUS_ON_MESSAGE_BOX = "focusOnMessageBox"
 private const val MAX_CONFIRM_DELETE_STRING_LENGTH = 20
 
@@ -329,6 +330,13 @@ class ChatFragment : BaseFragment<FragmentChatBinding>(FragmentChatBinding::infl
         outgoingMessage.doAfterTextChanged {
             viewModel.setTyping(outgoingMessage.text.isNotEmpty())
             updateActions()
+        }
+
+        val filesShare = arguments?.getParcelableArrayList(CHAT_FILES_SHARE, Uri::class.java)
+        if (filesShare != null) {
+            for (file in filesShare) {
+                viewModel.createFt(file)
+            }
         }
 
         updateActions()

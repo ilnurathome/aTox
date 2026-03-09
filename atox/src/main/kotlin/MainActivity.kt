@@ -5,8 +5,10 @@
 package ltd.evilcorp.atox
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Parcelable
 import android.util.Log
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
@@ -16,6 +18,8 @@ import androidx.core.view.WindowCompat
 import androidx.navigation.fragment.findNavController
 import ltd.evilcorp.atox.di.ViewModelFactory
 import ltd.evilcorp.atox.settings.Settings
+import ltd.evilcorp.atox.ui.contactlist.ARG_FILES_SHARE
+import ltd.evilcorp.atox.ui.contactlist.ARG_FILE_SHARE
 import ltd.evilcorp.atox.ui.contactlist.ARG_SHARE
 import javax.inject.Inject
 
@@ -77,6 +81,7 @@ class MainActivity : AppCompatActivity() {
         when (intent.action) {
             Intent.ACTION_VIEW -> handleToxLinkIntent(intent)
             Intent.ACTION_SEND -> handleShareIntent(intent)
+            Intent.ACTION_SEND_MULTIPLE -> handleMultipleShareIntent(intent)
         }
     }
 
@@ -96,19 +101,33 @@ class MainActivity : AppCompatActivity() {
 
     private fun handleShareIntent(intent: Intent) {
         if (intent.type != "text/plain") {
-            Log.e(TAG, "Got unsupported share type ${intent.type}")
-            return
-        }
+//            Log.e(TAG, "Got unsupported share type ${intent.type}")
+//            return
+            (intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as? Uri)?.let { data ->
+                Log.i(TAG, "Got file share: $data")
+                val navController =
+                    supportFragmentManager.findFragmentById(R.id.nav_host_fragment)?.findNavController() ?: return
+                navController.navigate(R.id.contactListFragment, bundleOf(ARG_FILE_SHARE to data))
+            }
+        } else {
+            val data = intent.getStringExtra(Intent.EXTRA_TEXT)
+            if (data.isNullOrEmpty()) {
+                Log.e(TAG, "Got share intent with no data")
+                return
+            }
 
-        val data = intent.getStringExtra(Intent.EXTRA_TEXT)
-        if (data.isNullOrEmpty()) {
-            Log.e(TAG, "Got share intent with no data")
-            return
+            Log.i(TAG, "Got text share: $data")
+            val navController =
+                supportFragmentManager.findFragmentById(R.id.nav_host_fragment)?.findNavController() ?: return
+            navController.navigate(R.id.contactListFragment, bundleOf(ARG_SHARE to data))
         }
+    }
 
-        Log.i(TAG, "Got text share: $data")
-        val navController =
-            supportFragmentManager.findFragmentById(R.id.nav_host_fragment)?.findNavController() ?: return
-        navController.navigate(R.id.contactListFragment, bundleOf(ARG_SHARE to data))
+    private fun handleMultipleShareIntent(intent: Intent) {
+        intent.getParcelableArrayListExtra<Parcelable>(Intent.EXTRA_STREAM)?.let { data ->
+            val navController =
+                supportFragmentManager.findFragmentById(R.id.nav_host_fragment)?.findNavController() ?: return
+            navController.navigate(R.id.contactListFragment, bundleOf(ARG_FILES_SHARE to data))
+        }
     }
 }

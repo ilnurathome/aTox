@@ -18,3 +18,9 @@ data class SaveOptions(
     val proxyAddress: String,
     val proxyPort: Int,
 )
+
+enum class ApplistTypes {
+    Disable,
+    Blacklist,
+    Whitelist,
+}

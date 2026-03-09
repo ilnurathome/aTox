@@ -12,10 +12,10 @@ android {
     namespace = "ltd.evilcorp.atox"
     compileSdk = libs.versions.sdk.target.get().toInt()
     defaultConfig {
-        applicationId = "ltd.evilcorp.atox"
+        applicationId = "ltd.roarjet.atox"
         minSdk = libs.versions.sdk.min.get().toInt()
         targetSdk = libs.versions.sdk.target.get().toInt()
-        versionCode = 14
+        versionCode = 16
         versionName = "0.8.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled = true

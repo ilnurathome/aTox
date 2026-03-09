@@ -163,4 +163,7 @@
     <string name="export_history_failure">Экспортирование истории сообщений не удалось: %1$s</string>
     <string name="call_confirm">Вы уверены, что хотите совершить звонок\?</string>
     <string name="pref_confirm_calling">Подтвердить звонок</string>
+    <string name="applist_setting">Фильтр приложений</string>
+    <string name="apps_select">Выбрать приложения</string>
+    <string name="search_apps">Поиск приложений</string>
 </resources>

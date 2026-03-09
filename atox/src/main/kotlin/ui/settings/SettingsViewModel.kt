@@ -24,6 +24,7 @@ import ltd.evilcorp.atox.settings.BootstrapNodeSource
 import ltd.evilcorp.atox.settings.FtAutoAccept
 import ltd.evilcorp.atox.settings.Settings
 import ltd.evilcorp.atox.tox.ToxStarter
+import ltd.evilcorp.domain.tox.ApplistTypes
 import ltd.evilcorp.domain.tox.BootstrapNodeJsonParser
 import ltd.evilcorp.domain.tox.BootstrapNodeRegistry
 import ltd.evilcorp.domain.tox.ProxyType
@@ -221,4 +222,14 @@ class SettingsViewModel @Inject constructor(
     fun setDisableScreenshots(disable: Boolean) {
         settings.disableScreenshots = disable
     }
+
+    // TOX VPN settings
+    fun getApplistTypes(): ApplistTypes = settings.listTypeTOXVPN
+    fun setApplistTypes(type: ApplistTypes) {
+        if (type != getApplistTypes()) {
+            settings.listTypeTOXVPN = type
+            restartNeeded = true
+        }
+    }
+
 }

@@ -15,6 +15,7 @@ import android.widget.Spinner
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.os.bundleOf
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -33,7 +34,9 @@ import ltd.evilcorp.atox.databinding.FragmentSettingsBinding
 import ltd.evilcorp.atox.settings.BootstrapNodeSource
 import ltd.evilcorp.atox.settings.FtAutoAccept
 import ltd.evilcorp.atox.ui.BaseFragment
+import ltd.evilcorp.atox.ui.chat.CONTACT_PUBLIC_KEY
 import ltd.evilcorp.atox.vmFactory
+import ltd.evilcorp.domain.tox.ApplistTypes
 import ltd.evilcorp.domain.tox.ProxyType
 
 private fun Spinner.onItemSelectedListener(callback: (Int) -> Unit) {
@@ -297,6 +300,27 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>(FragmentSettingsB
             } else {
                 requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
             }
+        }
+
+        // TOX VPN settings
+        settingToxvpnApplistTypes.adapter = ArrayAdapter.createFromResource(
+            requireContext(),
+            R.array.pref_applist_options,
+            android.R.layout.simple_spinner_item,
+        ).apply { setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
+
+        settingToxvpnApplistTypes.setSelection(vm.getApplistTypes().ordinal)
+
+        settingToxvpnApplistTypes.onItemSelectedListener {
+            val selected = ApplistTypes.entries[it]
+            vm.setApplistTypes(selected)
+        }
+
+        selectApps.setOnClickListener {
+            WindowInsetsControllerCompat(requireActivity().window, view).hide(WindowInsetsCompat.Type.ime())
+            findNavController().navigate(
+                R.id.action_settingsFragment_to_appSelectFragment,
+            )
         }
 
         version.text = getString(R.string.version_display, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE)

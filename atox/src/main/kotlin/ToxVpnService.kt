@@ -11,13 +11,15 @@ import android.os.Build
 import android.os.Handler
 import android.util.Log
 import android.widget.Toast
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
+//import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
+import ltd.evilcorp.atox.settings.Settings
 import ltd.evilcorp.atox.tox.EventListenerCallbacks
 import ltd.evilcorp.atox.tox.ToxStarter
 import ltd.evilcorp.core.vo.Contact
 import ltd.evilcorp.domain.feature.ContactManager
+import ltd.evilcorp.domain.tox.ApplistTypes
 import ltd.evilcorp.domain.tox.Tox
 import java.net.InetAddress
 import java.util.concurrent.atomic.AtomicReference
@@ -39,9 +41,19 @@ class ToxVpnService : VpnService() {
     @Inject
     lateinit var eventListenerCallbacks: EventListenerCallbacks
 
+    @Inject
+    lateinit var settings: Settings
+
     private var mHandler: Handler? = null
     private val mVpnThread = AtomicReference<Thread>()
     private var mConfigureIntent: PendingIntent? = null
+
+    companion object {
+        private val TAG: String = ToxVpnService::class.java.simpleName
+        private const val FOREGROUND_SERVICE_ID: Int = 1
+        private const val PAUSE_NOTIFICATION_ID: Int = 3
+        private const val NOTIFICATION_CHANNEL_ID: String = "ToxVpn"
+    }
 
     override fun onDestroy() {
         stopVpn()
@@ -133,6 +145,35 @@ class ToxVpnService : VpnService() {
                             .setMtu(mtu)
                             .also { if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) it.setMetered(false) }
 
+                        val listType = settings.listTypeTOXVPN
+                        val listedApps = settings.selectedAppsTOXVPN
+
+                        when(listType) {
+                            ApplistTypes.Blacklist -> {
+                                for (packageName in listedApps) {
+                                    try {
+                                        builder.addDisallowedApplication(packageName)
+                                    } catch (e: Exception) {
+                                        Log.e(TAG, "Не удалось добавить приложение $packageName в черный список", e)
+                                    }
+                                }
+
+                                builder.addDisallowedApplication(applicationContext.packageName)
+                            }
+                            ApplistTypes.Whitelist -> {
+                                for (packageName in listedApps) {
+                                    try {
+                                        builder.addAllowedApplication(packageName)
+                                    } catch (e: Exception) {
+                                        Log.e(TAG, "Не удалось добавить приложение $packageName в белый список", e)
+                                    }
+                                }
+                            }
+                            ApplistTypes.Disable -> {
+                                builder.addDisallowedApplication(application.packageName)
+                            }
+                        }
+
                         //                    builder.addRoute(netAddress, 24)
                         val routes = mutableMapOf<InetAddress, Contact>()
 
@@ -208,20 +249,19 @@ class ToxVpnService : VpnService() {
         Log.i(TAG, "Stopping any running tox daemon.")
         if (mVpnThread.get() != null) {
             storeConnectingThread(null)
-            broadcastEvent(Actions.EVENT_DISCONNECTED)
+//            broadcastEvent(Actions.EVENT_DISCONNECTED)
         }
     }
 
     private fun updateForegroundNotification(message: Int) {
-        val CHANNEL_ID = "ToxVpn"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel: NotificationChannel
-            channel = NotificationChannel(CHANNEL_ID, CHANNEL_ID, NotificationManager.IMPORTANCE_DEFAULT)
+            channel = NotificationChannel(NOTIFICATION_CHANNEL_ID, NOTIFICATION_CHANNEL_ID, NotificationManager.IMPORTANCE_DEFAULT)
             val mgr = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             mgr.createNotificationChannel(channel)
             startForeground(
-                1,
-                Notification.Builder(this, CHANNEL_ID)
+                FOREGROUND_SERVICE_ID,
+                Notification.Builder(this, NOTIFICATION_CHANNEL_ID)
                     .setSmallIcon(R.drawable.ic_vpn)
                     .setContentText(getString(message))
                     .setContentIntent(mConfigureIntent)
@@ -229,7 +269,7 @@ class ToxVpnService : VpnService() {
             )
         } else {
             startForeground(
-                1,
+                FOREGROUND_SERVICE_ID,
                 Notification.Builder(this)
                     .setSmallIcon(R.drawable.ic_vpn)
                     .setContentText(getString(message))
@@ -242,9 +282,9 @@ class ToxVpnService : VpnService() {
         }
     }
 
-    private fun broadcastEvent(event: String) {
-        LocalBroadcastManager.getInstance(this).sendBroadcast(Intent(event))
-    }
+//    private fun broadcastEvent(event: String) {
+//        LocalBroadcastManager.getInstance(this).sendBroadcast(Intent(event))
+//    }
 
     /**
      * Compute network address from IP and mask

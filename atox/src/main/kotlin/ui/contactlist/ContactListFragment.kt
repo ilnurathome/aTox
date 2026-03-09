@@ -7,6 +7,7 @@ package ltd.evilcorp.atox.ui.contactlist
 
 import android.Manifest
 import android.content.Intent
+import android.net.Uri
 import android.net.VpnService
 import android.os.Build
 import android.os.Bundle
@@ -36,7 +37,6 @@ import androidx.navigation.fragment.findNavController
 import com.google.android.material.navigation.NavigationView
 import ltd.evilcorp.atox.Actions
 import ltd.evilcorp.atox.R
-import ltd.evilcorp.atox.ToxService
 import ltd.evilcorp.atox.ToxVpnService
 import ltd.evilcorp.atox.databinding.ContactListViewItemBinding
 import ltd.evilcorp.atox.databinding.FragmentContactListBinding
@@ -46,6 +46,7 @@ import ltd.evilcorp.atox.hasPermission
 import ltd.evilcorp.atox.truncated
 import ltd.evilcorp.atox.ui.BaseFragment
 import ltd.evilcorp.atox.ui.ReceiveShareDialogFragment
+import ltd.evilcorp.atox.ui.chat.CHAT_FILES_SHARE
 import ltd.evilcorp.atox.ui.chat.CONTACT_PUBLIC_KEY
 import ltd.evilcorp.atox.ui.colorFromStatus
 import ltd.evilcorp.atox.ui.contactListSorter
@@ -59,6 +60,8 @@ import ltd.evilcorp.domain.tox.PublicKey
 import ltd.evilcorp.domain.tox.ToxSaveStatus
 
 const val ARG_SHARE = "share"
+const val ARG_FILE_SHARE = "fileshare"
+const val ARG_FILES_SHARE = "filesShare"
 private const val MAX_CONFIRM_DELETE_STRING_LENGTH = 32
 
 private fun User.online(): Boolean = connectionStatus != ConnectionStatus.None
@@ -204,6 +207,32 @@ class ContactListFragment :
                 },
             ).show(childFragmentManager, null)
         }
+
+        arguments?.getParcelable(ARG_FILE_SHARE, Uri::class.java)?.let { file ->
+            ReceiveShareDialogFragment(
+                viewModel.contacts,
+                file.toString(),
+                onContactSelected = {
+                    openChatFilesShare(it, arrayListOf(file))
+                },
+                onDialogDismissed = {
+                    arguments?.remove(ARG_SHARE)
+                },
+            ).show(childFragmentManager, null)
+        }
+
+        arguments?.getParcelableArrayList(ARG_FILES_SHARE, Uri::class.java)?.let { files ->
+            ReceiveShareDialogFragment(
+                viewModel.contacts,
+                files.size.toString(),
+                onContactSelected = {
+                    openChatFilesShare(it, files)
+                },
+                onDialogDismissed = {
+                    arguments?.remove(ARG_SHARE)
+                },
+            ).show(childFragmentManager, null)
+        }
     }
 
     override fun onDestroyView() {
@@ -293,6 +322,14 @@ class ContactListFragment :
                         requireContext().startForegroundService(Intent(requireContext(), ToxVpnService::class.java).setAction(Actions.ACTION_CONNECT))
                     }
                 }
+            }
+            R.id.stop_vpn -> {
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+                    requireContext().startService(Intent(requireContext(), ToxVpnService::class.java).setAction(Actions.ACTION_DISCONNECT))
+                } else {
+                    requireContext().startForegroundService(Intent(requireContext(), ToxVpnService::class.java).setAction(Actions.ACTION_DISCONNECT))
+                }
+//                item.setVisible(false)
             }
             R.id.settings -> findNavController().navigate(R.id.action_contactListFragment_to_settingsFragment)
             R.id.export_tox_save -> exportToxSaveLauncher.launch(backupFileNameHint)
@@ -395,6 +432,14 @@ class ContactListFragment :
     private fun openChat(contact: Contact) = findNavController().navigate(
         R.id.action_contactListFragment_to_chatFragment,
         bundleOf(CONTACT_PUBLIC_KEY to contact.publicKey),
+    )
+
+    private fun openChatFilesShare(contact: Contact, files: ArrayList<Uri>) = findNavController().navigate(
+        R.id.action_contactListFragment_to_chatFragment,
+        bundleOf(
+            CONTACT_PUBLIC_KEY to contact.publicKey,
+            CHAT_FILES_SHARE to files
+            ),
     )
 
     private fun openFriendRequest(friendRequest: FriendRequest) = findNavController().navigate(

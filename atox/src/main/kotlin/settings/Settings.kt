@@ -13,6 +13,7 @@ import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import javax.inject.Inject
 import ltd.evilcorp.atox.BootReceiver
+import ltd.evilcorp.domain.tox.ApplistTypes
 import ltd.evilcorp.domain.tox.ProxyType
 
 enum class FtAutoAccept {
@@ -97,4 +98,13 @@ class Settings @Inject constructor(private val ctx: Context) {
     var confirmCalling: Boolean
         get() = preferences.getBoolean("confirm_calling", true)
         set(confirm) = preferences.edit { putBoolean("confirm_calling", confirm) }
+
+    // TOX VPN settings
+    var listTypeTOXVPN: ApplistTypes
+        get() = ApplistTypes.entries[preferences.getInt("toxvpn_listtype", 0)]
+        set(listtype) = preferences.edit { putInt("toxvpn_listtype", listtype.ordinal) }
+
+    var selectedAppsTOXVPN: List<String>
+        get() = preferences.getStringSet("toxvpn_selected_apps", emptySet())?.toList()  ?: emptyList()
+        set(selectedApps) = preferences.edit { putStringSet("toxvpn_selected_apps", selectedApps.toSet()) }
 }

@@ -108,10 +108,22 @@
     <fragment android:id="@+id/settingsFragment"
             android:name="ltd.evilcorp.atox.ui.settings.SettingsFragment"
             android:label="SettingsFragment"
-            tools:layout="@layout/fragment_settings"/>
+            tools:layout="@layout/fragment_settings">
+        <action android:id="@+id/action_settingsFragment_to_appSelectFragment"
+            app:destination="@id/appSelectionFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/fade_out"
+            app:popEnterAnim="@anim/fade_in"
+            app:popExitAnim="@anim/slide_out_right"/>
+    </fragment>
     <fragment
             android:id="@+id/userProfileFragment"
             android:name="ltd.evilcorp.atox.ui.userprofile.UserProfileFragment"
             android:label="fragment_user_profile"
             tools:layout="@layout/fragment_user_profile"/>
+    <fragment
+        android:id="@+id/appSelectionFragment"
+        android:name="ltd.evilcorp.atox.ui.appselect.AppSelectionFragment"
+        android:label="app_selection_layout"
+        tools:layout="@layout/app_selection_layout"/>
 </navigation>
